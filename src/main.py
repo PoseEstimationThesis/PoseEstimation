@@ -1,13 +1,12 @@
 import logic.Camera as Camera
-import visual.Interface as Intefrace
+import visual.Interface as Interface
 
 
 
 def main():
    basic_object = Camera.CameraObject(0)
    basic_object.start_capturing()
-   basic_object_interface = Intefrace.BasicInterface()
-   basic_object_interface.initialize_interface()
+   Interface.BasicInterface.initialize_interface()
 
 if __name__ == "__main__":
     main()
