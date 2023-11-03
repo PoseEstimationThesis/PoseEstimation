@@ -20,13 +20,15 @@ class Camera:
         return self.valid
 
 class FrameProcessor(QObject):
+    FRAMES_PER_SECOND = 120
+    
     frameProcessedSignal = Signal(object, int)
     finished = Signal(int)
 
     def start_processing(self):
         self.timer = QTimer()
         self.timer.timeout.connect(self.process_frame)
-        self.timer.start(100)  # Adjust as necessary
+        self.timer.start(1000/self.FRAMES_PER_SECOND)  # Adjust as necessary
 
     def __init__(self, camera):
         super().__init__()
@@ -38,6 +40,7 @@ class FrameProcessor(QObject):
         ret, frame = self.camera.read_frame()
         if ret:
             # Process the frame
+            # Here insert mediapipe logic
             processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             print(f"Processing frame from camera {self.camera.camera_id}")
             self.frameProcessedSignal.emit(processed_frame, self.camera.camera_id)
