@@ -1,8 +1,10 @@
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QWidget, QTabWidget, QGridLayout
-from PySide6.QtCore import QThread, QSize
+from PySide6.QtCore import QThread, QSize, QCoreApplication
 from worker import FrameProcessor, Camera
 from camerawidget import CameraWidget
+from anglewidget import AngleWidget
 import sys
+
 
 def discover_cameras():
     # Simple camera discovery
@@ -13,9 +15,11 @@ def discover_cameras():
             cameras.append(cam)
     return cameras
 
+
 class ApplicationManager:
     MAX_CAMERAS_PER_TAB = 4
-    
+    MAX_ANGLES_PER_TAB = 2
+
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.main_widget = QWidget()
@@ -24,9 +28,12 @@ class ApplicationManager:
         self.main_layout.addWidget(self.tab_widget)
         self.frame_processors = []
         self.threads = []
+        self.angle_widgets = []
 
         cameras = discover_cameras()
         self.setup_camera_tabs(cameras)
+
+        self.setup_angle_tabs()
 
         self.main_widget.show()
 
@@ -37,10 +44,10 @@ class ApplicationManager:
             if i % self.MAX_CAMERAS_PER_TAB == 0:
                 tab = QWidget()
                 grid = QGridLayout(tab)
-                self.tab_widget.addTab(tab, f"Cameras {i+1}-{i+self.MAX_CAMERAS_PER_TAB}")
+                self.tab_widget.addTab(tab, f"Cameras {i + 1}-{i + self.MAX_CAMERAS_PER_TAB}")
             cam_widget = CameraWidget(camera.camera_id)
             row = (i % self.MAX_CAMERAS_PER_TAB) // 2  # Change the divisor to adjust layout
-            col = (i % self.MAX_CAMERAS_PER_TAB) % 2   # Change the modulus to adjust layout
+            col = (i % self.MAX_CAMERAS_PER_TAB) % 2  # Change the modulus to adjust layout
             grid.addWidget(cam_widget, row, col)
 
             frame_processor = FrameProcessor(camera)
@@ -56,6 +63,23 @@ class ApplicationManager:
 
             thread.start()
 
+    def setup_angle_tabs(self):
+        self.angle_widgets.append(AngleWidget('11', '13', '15'))
+        self.angle_widgets.append(AngleWidget('12', '14', '16'))
+        grid = None
+        for i, angle_widget in enumerate(self.angle_widgets):
+            if i % self.MAX_ANGLES_PER_TAB == 0:
+                tab = QWidget()
+                grid = QGridLayout(tab)
+                self.tab_widget.addTab(tab, f"Angles {i + 1}-{i + self.MAX_ANGLES_PER_TAB}")
+            row = (i % self.MAX_ANGLES_PER_TAB) // 2  # Change the divisor to adjust layout
+            col = (i % self.MAX_ANGLES_PER_TAB) % 2  # Change the modulus to adjust layout
+            grid.addWidget(angle_widget, row, col)
+
+            thread = QThread()
+            angle_widget.moveToThread(thread)
+            self.threads.append(thread)
+
     def run(self):
         return self.app.exec()
 
@@ -63,7 +87,9 @@ class ApplicationManager:
         def cleanup():
             thread.quit()
             thread.wait()
+
         return cleanup
+
 
 if __name__ == '__main__':
     manager = ApplicationManager()

@@ -7,7 +7,7 @@ class Camera:
         self.camera_id = camera_id
         self.cap = cv2.VideoCapture(self.camera_id)
         self.valid = self.cap.isOpened()
-        self.body_estimator = BodyEstimator()
+        self.body_estimator = BodyEstimator(self.camera_id)
 
 
     def read_frame(self):
@@ -37,6 +37,7 @@ class FrameProcessor(QObject):
         super().__init__()
         self.camera = camera
 
+
     @Slot()
     def process_frame(self):
         print(f"Attempting to process frame from camera {self.camera.camera_id}")
@@ -47,6 +48,7 @@ class FrameProcessor(QObject):
             processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.camera.body_estimator.estimate_body(processed_frame)
             self.camera.body_estimator.draw_landmarks()
+            self.camera.body_estimator.calculate_all()
             print(f"Processing frame from camera {self.camera.camera_id}")
             self.frameProcessedSignal.emit(processed_frame, self.camera.camera_id)
         else:
