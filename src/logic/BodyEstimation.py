@@ -26,28 +26,46 @@ class BodyEstimator:
     def draw_landmarks(self):
         if self.landmarks is not None:
             connections = [
-                (11, 12), (12, 24), (11, 23),  # Head
-                (11, 13), (12, 14),  # Neck and spine
-                (13, 15), (14, 16),  # Upper arms
-                (15, 17), (16, 18),  # Forearms
-                (23, 25), (24, 26),  # Hips
-                (25, 27), (26, 28),  # Thighs
-                (27, 29), (28, 30)  # Lower legs
+                (11, 12), (12, 24), (11, 23), # Torso
+                (13, 11), (13, 15), (15, 17), # Left Arm
+                (14, 12), (14, 16), (16, 18), # Right Arm
+                (25, 23), (25, 27), (27, 29), # Left Leg 
+                (26, 24), (26, 28), (28, 30)  # Right Leg
             ]
+
+            body_parts = {
+                11: "Torso", 12: "Torso", 23: "Torso", 24: "Torso",
+                13: "Left Arm", 15: "Left Arm", 17: "Left Arm",
+                14: "Right Arm" ,16: "Right Arm", 18: "Right Arm",
+                25: "Left Leg", 27: "Left Leg", 29: "Left Leg",
+                26: "Right Leg", 28: "Right Leg", 30: "Right Leg"
+            }
+
+            body_part_colors = {
+                "Torso": (255, 0, 0),  # Red
+                "Right Arm": (255, 128, 0),  # Orange
+                "Right Leg": (255, 255, 0),  # Yellow
+                "Left Arm": (255, 0, 255),  # Magenta
+                "Left Leg": (0, 0, 255)  # Blue
+            }
 
             for idx, landmark in enumerate(self.landmarks):
                 # Check if the landmark is part of the body
-                if idx in [11, 12, 23, 24, 13, 14, 15, 16, 17, 18, 25, 26, 27, 28, 29, 30]:
+                if idx in body_parts:
                     x, y = int(landmark.x * self.frame.shape[1]), int(landmark.y * self.frame.shape[0])
-                    cv.circle(self.frame, (x, y), 5, (0, 0, 255), -1)  # Draw a red circle at each body landmark
-                    cv.putText(self.frame, str(idx), (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)  # Display landmark number
+                    part_name = body_parts[idx]
+                    color = body_part_colors[part_name]
+                    cv.circle(self.frame, (x, y), 5, color, -1)  # Draw a colored circle at each body landmark
+                    cv.putText(self.frame, str(idx), (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, color, 2)  # Display landmark number
 
             for connection in connections:
-                point1 = self.landmarks[connection[0]]
-                point2 = self.landmarks[connection[1]]
-                x1, y1 = int(point1.x * self.frame.shape[1]), int(point1.y * self.frame.shape[0])
-                x2, y2 = int(point2.x * self.frame.shape[1]), int(point2.y * self.frame.shape[0])
-                cv.line(self.frame, (x1, y1), (x2, y2), (0, 0, 255), 5)  # Draw lines in red
+                idx1, idx2 = connection
+                if idx1 in body_parts and idx2 in body_parts:
+                    x1, y1 = int(self.landmarks[idx1].x * self.frame.shape[1]), int(self.landmarks[idx1].y * self.frame.shape[0])
+                    x2, y2 = int(self.landmarks[idx2].x * self.frame.shape[1]), int(self.landmarks[idx2].y * self.frame.shape[0])
+                    part_name = body_parts[idx1]
+                    color = body_part_colors[part_name]
+                    cv.line(self.frame, (x1, y1), (x2, y2), color, 5)  # Draw colored lines
 
     def calculate_all(self):
         self.angle1 = self.angle_calculator.calculate_joint_angle_left(self.landmarks, 11, 13, 15)
