@@ -40,8 +40,7 @@ class BodyEstimator:
                 if idx in [11, 12, 23, 24, 13, 14, 15, 16, 17, 18, 25, 26, 27, 28, 29, 30]:
                     x, y = int(landmark.x * self.frame.shape[1]), int(landmark.y * self.frame.shape[0])
                     cv.circle(self.frame, (x, y), 5, (0, 0, 255), -1)  # Draw a red circle at each body landmark
-                    cv.putText(self.frame, str(idx), (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255),
-                               1)  # Display landmark number
+                    cv.putText(self.frame, str(idx), (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)  # Display landmark number
 
             for connection in connections:
                 point1 = self.landmarks[connection[0]]
