@@ -4,11 +4,10 @@ from PySide6.QtCore import Qt, QTimer, QCoreApplication
 from logic.DataManager import shared_data_instance
 
 class AngleWidget(QWidget):
-    def __init__(self, joint1, joint2, joint3):
+    def __init__(self, camera_id, joint_name):
         super().__init__()
-        self.mJoint1 = joint1
-        self.mJoint2 = joint2
-        self.mJoint3 = joint3
+        self.joint_name = joint_name
+        self.camera_id = camera_id
 
         self.layout = QVBoxLayout(self)
 
@@ -31,11 +30,11 @@ class AngleWidget(QWidget):
 
 
     def update_angle(self):
-        for key, data in shared_data_instance.angle_data.items():
-            device_number, joint1, joint2, joint3 = key.split('_')
-            if (self.mJoint1 == joint1 and self.mJoint2 == joint2 and self.mJoint3 == joint3):
-                angle = data["angle"]
-                angle_text = f"Angle (Device {device_number}): {angle:.2f} between joints: {joint1}, {joint2}, {joint3}"
-                self.angle_label.setText(angle_text)
+        data = shared_data_instance.get_data(self.camera_id, self.joint_name)
+        if data is not None:
+            angle = data
+            angle_text = f"Angle (Device {self.camera_id}): {angle:.2f} for joint: {self.joint_name}"
+            self.angle_label.setText(angle_text)
+
 
 

@@ -1,5 +1,6 @@
 from logic.AngleCalculator import AngleCalculator
 from logic.DataManager import shared_data_instance
+from feature import JointDict
 import mediapipe as mp
 import cv2 as cv
 
@@ -69,8 +70,8 @@ class BodyEstimator:
 
     def calculate_all(self):
         self.angle1 = self.angle_calculator.calculate_joint_angle_left(self.landmarks, 11, 13, 15)
-        shared_data_instance.set_data(self.camera_id, 11, 13, 15, self.angle1)
+        shared_data_instance.set_data(self.camera_id, JointDict.shared_joint_dict.get_reverse({"11", "13", "15"}), self.angle1)
         print(f"ANGLE1: {self.angle1}")
         self.angle2 = self.angle_calculator.calculate_joint_angle_right(self.landmarks, 12, 14, 16)
         print(f"ANGLE2: {self.angle2}")
-        shared_data_instance.set_data(self.camera_id, 12, 14, 16, self.angle2)
+        shared_data_instance.set_data(self.camera_id, JointDict.shared_joint_dict.get_reverse({"12", "14", "16"}), self.angle2)
