@@ -64,15 +64,17 @@ class GraphWidget(QWidget):
                 line = stream.readLine()
                 values = line.split(',')
                 if len(values) >= 4:
+                    device_number = int(values[0])
                     timestamp_str = values[3]
-                    try:
-                        angle = float(values[2]) if values[2] else None
-                        if angle is not None:
-                            timestamp = QDateTime.fromString(timestamp_str, "yyyy-MM-dd hh:mm:ss")
-                            normalized_timestamp = timestamp.toMSecsSinceEpoch() - min_timestamp.toMSecsSinceEpoch()
-                            self.series.append(normalized_timestamp, angle)
-                    except ValueError as e:
-                        print(f"Error processing line {line}: {e}")
+                    if self.camera_id == device_number:
+                        try:
+                            angle = float(values[2]) if values[2] else None
+                            if angle is not None:
+                                timestamp = QDateTime.fromString(timestamp_str, "yyyy-MM-dd hh:mm:ss")
+                                normalized_timestamp = timestamp.toMSecsSinceEpoch() - min_timestamp.toMSecsSinceEpoch()
+                                self.series.append(normalized_timestamp, angle)
+                        except ValueError as e:
+                            print(f"Error processing line {line}: {e}")
 
         data_file.close()
 
