@@ -1,6 +1,7 @@
 from PySide6.QtCore import QObject, Signal, Slot, QTimer
 import cv2
 from logic.BodyEstimation import BodyEstimator
+from logic.DataManager import shared_data_instance
 
 class Camera:
     def __init__(self, camera_id):
@@ -8,7 +9,6 @@ class Camera:
         self.cap = cv2.VideoCapture(self.camera_id)
         self.valid = self.cap.isOpened()
         self.body_estimator = BodyEstimator(self.camera_id)
-
 
     def read_frame(self):
         if self.is_valid():
@@ -40,7 +40,7 @@ class FrameProcessor(QObject):
 
     @Slot()
     def process_frame(self):
-        print(f"Attempting to process frame from camera {self.camera.camera_id}")
+        # print(f"Attempting to process frame from camera {self.camera.camera_id}")
         ret, frame = self.camera.read_frame()
         if ret:
             # Process the frame
@@ -48,9 +48,11 @@ class FrameProcessor(QObject):
             processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.camera.body_estimator.estimate_body(processed_frame)
             self.camera.body_estimator.draw_landmarks()
-            self.camera.body_estimator.calculate_all()
-            print(f"Processing frame from camera {self.camera.camera_id}")
+            # Calculate joint values and append them to DataFrame only when recording
+            if shared_data_instance.record_data_running:
+                self.camera.body_estimator.calculate_all()
+            # print(f"Processing frame from camera {self.camera.camera_id}")
             self.frameProcessedSignal.emit(processed_frame, self.camera.camera_id)
         else:
-            print(f"Camera {self.camera.camera_id} finished or failed to read frame.")
+            # print(f"Camera {self.camera.camera_id} finished or failed to read frame.")
             self.finished.emit(self.camera.camera_id)

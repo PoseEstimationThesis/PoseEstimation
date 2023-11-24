@@ -50,8 +50,18 @@ class ApplicationManager:
         self.setup_angle_tabs()
         self.setup_graph_tabs()
 
+        self.data_record_button = QPushButton("Run")
+        self.data_record_button.clicked.connect(shared_data_instance.switch_recording_data)
+        self.main_layout.addWidget(self.data_record_button)
+        
+        shared_data_instance.set_update_button_text_callback(self.update_button_text)
+        shared_data_instance.record_data_running = False
+
         self.main_widget.show()
 
+    def update_button_text(self, text):
+        self.data_record_button.setText(text)
+    
     def setup_camera_tabs(self, cameras):
         grid = None
         for i, camera in enumerate(cameras):
@@ -97,10 +107,6 @@ class ApplicationManager:
             angle_widget.moveToThread(thread)
             self.threads.append(thread)
 
-        self.export_button = QPushButton("Export Data")
-        self.export_button.clicked.connect(self.export_data)
-        grid.addWidget(self.export_button)
-
     def setup_graph_tabs(self):
         for camera in self.cameras:
             self.graph_widgets.append(GraphWidget(camera.camera_id))
@@ -132,9 +138,9 @@ class ApplicationManager:
 
         return cleanup
 
-    def export_data(self):
-        shared_data_instance.export_to_csv()
-        print("Data exported to CSV file!")
+    # def export_data(self):
+    #     shared_data_instance.export_to_csv()
+    #     print("Data exported to CSV file!")
 
 
 if __name__ == '__main__':

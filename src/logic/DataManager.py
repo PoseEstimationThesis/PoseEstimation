@@ -2,10 +2,21 @@ import pandas as pd
 import atexit
 from datetime import datetime
 
-
 class DataManager:
     def __init__(self):
         self.data = pd.DataFrame(columns=["Device Number", "Joint Name", "Angle", "Timestamp"])
+        self.update_button_text_callback = None
+
+    def set_update_button_text_callback(self, callback):
+        self.update_button_text_callback = callback
+
+    def switch_recording_data(self):
+        self.record_data_running = not self.record_data_running
+        if self.record_data_running:
+            self.update_button_text_callback("Stop")
+        else:
+            self.export_to_csv()
+            self.update_button_text_callback("Run")
 
     def get_data(self, device_number, joint_name):
         mask = (self.data["Device Number"] == device_number) & (self.data["Joint Name"] == joint_name)
