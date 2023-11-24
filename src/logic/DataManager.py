@@ -17,16 +17,22 @@ class DataManager:
             return None
 
     def set_data(self, device_number, joint_name, angle):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         new_entry = pd.DataFrame([[device_number, joint_name, angle, timestamp]],
                                  columns=["Device Number", "Joint Name", "Angle", "Timestamp"])
         self.data = pd.concat([self.data, new_entry], ignore_index=True)
 
+    def export_to_csv(self):
+        # Group data by 'Joint Name'
+        grouped_data = self.data.groupby('Joint Name')
 
-    def export_to_csv(self, file_path="data.csv"):
-        self.data.to_csv(file_path, index=False)
+        for joint_name, group in grouped_data:
+            # Filter data for each 'Joint Name' and create a DataFrame with specific columns
+            filtered_data = group[["Timestamp", "Device Number", "Angle"]]
 
+            # Export filtered data to CSV for each 'Joint Name'
+            joint_csv_filename = f"{joint_name}_data.csv"
+            filtered_data.to_csv(joint_csv_filename, index=False)
 
 
 shared_data_instance = DataManager()
-

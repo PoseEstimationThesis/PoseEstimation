@@ -1,7 +1,10 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QGraphicsView, QFileDialog
-from PySide6 import QtCharts
-from PySide6.QtCore import Qt, QFile, QTextStream, QDateTime, QTimer
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QFileDialog
+from PySide6.QtCore import QFile, QTextStream, QDateTime, QTimer
 from PySide6.QtGui import QPainter
+from datetime import datetime
 
 
 class GraphWidget(QWidget):
@@ -10,23 +13,14 @@ class GraphWidget(QWidget):
         self.camera_id = camera_id
         self.layout = QVBoxLayout(self)
 
-        self.chart_view = QtCharts.QChartView(self)
-        self.chart_view.setRenderHint(QPainter.Antialiasing)
-
-        self.layout.addWidget(self.chart_view)
+        self.figure = Figure()
+        self.ax = self.figure.add_subplot(111)
+        self.canvas = FigureCanvas(self.figure)
+        self.layout.addWidget(self.canvas)
 
         self.load_button = QPushButton(f"Load Data for {self.camera_id} ", self)
         self.load_button.clicked.connect(self.load_data)
         self.layout.addWidget(self.load_button)
-
-        self.series = QtCharts.QLineSeries()
-        self.chart = QtCharts.QChart()
-        self.chart.addSeries(self.series)
-        self.chart.createDefaultAxes()
-        self.chart.axisX().setRange(0, 20000)
-        self.chart.axisY().setRange(0, 360)
-        self.chart.setTitle(f"CSV Data Chart for Device: {self.camera_id}")
-        self.chart_view.setChart(self.chart)
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_graph)
@@ -41,42 +35,45 @@ class GraphWidget(QWidget):
             print("Failed to open file:", file_name)
             return
 
-        self.series.clear()
-
         stream = QTextStream(data_file)
-        header_line = stream.readLine()
+        header_line = stream.readLine()  # Skip the header line
 
         timestamps = []
+        angles = []
+        min_timestamp = None
         while not stream.atEnd():
             line = stream.readLine()
             values = line.split(',')
-            if len(values) >= 4:
-                timestamp_str = values[3]
-                timestamps.append(QDateTime.fromString(timestamp_str, "yyyy-MM-dd hh:mm:ss"))
+            if len(values) >= 3:
+                timestamp_str = values[0]
+                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+                timestamps.append(timestamp)
 
-        if timestamps:
-            min_timestamp = min(timestamps)
-
-            stream.seek(0)
-            header_line = stream.readLine()
-
-            while not stream.atEnd():
-                line = stream.readLine()
-                values = line.split(',')
-                if len(values) >= 4:
-                    device_number = int(values[0])
-                    timestamp_str = values[3]
+                # Check for non-header lines
+                if values[1].isdigit():  # Validate if the value is a number before conversion
+                    device_number = int(values[1])
                     if self.camera_id == device_number:
                         try:
                             angle = float(values[2]) if values[2] else None
                             if angle is not None:
-                                timestamp = QDateTime.fromString(timestamp_str, "yyyy-MM-dd hh:mm:ss")
-                                normalized_timestamp = timestamp.toMSecsSinceEpoch() - min_timestamp.toMSecsSinceEpoch()
-                                self.series.append(normalized_timestamp, angle)
+                                angles.append(angle)
                         except ValueError as e:
                             print(f"Error processing line {line}: {e}")
 
         data_file.close()
+        # Calculate timestamps in seconds from the epoch
+        timestamps_seconds_from_epoch = [(timestamp - min(timestamps)).total_seconds()
+                                         for timestamp in timestamps]
+
+        # Use x-values against timestamps in seconds for plotting
+        self.ax.plot(timestamps_seconds_from_epoch, angles)  # Change marker type if needed
+        self.ax.set_xlabel('Time')
+        self.ax.set_ylabel('Angle')
+        self.ax.set_title(f"CSV Data Chart for Device: {self.camera_id}")
+        self.ax.set_xlim(0, max(timestamps_seconds_from_epoch))  # Start from zero based on lowest timestamp
+        # Adjust y-axis limits according to your angles if needed
+        self.canvas.draw()
+
 
     def update_graph(self):
-        self.chart_view.repaint()
+        self.canvas.draw()

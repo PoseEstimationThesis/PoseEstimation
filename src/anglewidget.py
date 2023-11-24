@@ -31,7 +31,7 @@ class AngleWidget(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_angle)
-        self.timer.start(1000)
+        self.timer.start(1)
 
 
     def update_angle(self):
