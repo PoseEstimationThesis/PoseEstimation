@@ -40,6 +40,3 @@ class AngleWidget(QWidget):
             angle = data
             angle_text = f"Angle (Device {self.camera_id}): {angle:.2f} for joint: {self.joint_name}"
             self.angle_label.setText(angle_text)
-
-
-

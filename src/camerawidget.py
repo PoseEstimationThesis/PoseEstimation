@@ -44,7 +44,7 @@ class CameraWidget(QWidget):
             q_img = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
             pixmap = QPixmap.fromImage(q_img)
             self.image_label.setPixmap(pixmap.scaled(self.image_label.width(), self.image_label.height(), Qt.KeepAspectRatio))
-            print(f"Camera {camera_index}: Image updated.")
+            # print(f"Camera {camera_index}: Image updated.")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -54,4 +54,5 @@ class CameraWidget(QWidget):
 
     def notify_camera_stopped(self, camera_index):
         if camera_index == self.camera_index:
-            print(f"Camera {camera_index} stopped.")
+            pass
+            # print(f"Camera {camera_index} stopped.")

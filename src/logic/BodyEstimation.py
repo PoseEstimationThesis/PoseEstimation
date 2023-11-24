@@ -69,9 +69,11 @@ class BodyEstimator:
                     cv.line(self.frame, (x1, y1), (x2, y2), color, 5)  # Draw colored lines
 
     def calculate_all(self):
-        self.angle1 = self.angle_calculator.calculate_joint_angle_left(self.landmarks, 11, 13, 15)
-        shared_data_instance.set_data(self.camera_id, JointDict.shared_joint_dict.get_reverse({"11", "13", "15"}), self.angle1)
-        print(f"ANGLE1: {self.angle1}")
-        self.angle2 = self.angle_calculator.calculate_joint_angle_right(self.landmarks, 12, 14, 16)
-        print(f"ANGLE2: {self.angle2}")
-        shared_data_instance.set_data(self.camera_id, JointDict.shared_joint_dict.get_reverse({"12", "14", "16"}), self.angle2)
+        self.left_elbow = self.angle_calculator.calculate_joint_angle_left(self.landmarks, 11, 13, 15)
+        shared_data_instance.set_data(self.camera_id, JointDict.shared_joint_dict.get_reverse({"11", "13", "15"}), self.left_elbow)
+        self.right_elbow = self.angle_calculator.calculate_joint_angle_right(self.landmarks, 12, 14, 16)
+        shared_data_instance.set_data(self.camera_id, JointDict.shared_joint_dict.get_reverse({"12", "14", "16"}), self.right_elbow)
+        self.left_knee = self.angle_calculator.calculate_joint_angle_left(self.landmarks, 23, 25, 27)
+        shared_data_instance.set_data(self.camera_id, JointDict.shared_joint_dict.get_reverse({"23", "25", "27"}), self.left_knee)
+        self.right_knee = self.angle_calculator.calculate_joint_angle_right(self.landmarks, 24, 26, 28)
+        shared_data_instance.set_data(self.camera_id, JointDict.shared_joint_dict.get_reverse({"24", "26", "28"}), self.right_knee)

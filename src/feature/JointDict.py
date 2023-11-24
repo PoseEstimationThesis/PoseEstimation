@@ -5,6 +5,8 @@ class JointDict:
 
         self.add_mapping("LEFT_ARM", {"11", "13", "15"})
         self.add_mapping("RIGHT_ARM", {"12", "14", "16"})
+        self.add_mapping("LEFT_KNEE", {"24", "26", "28"})
+        self.add_mapping("RIGHT_KNEE", {"23", "25", "27"})
 
     def add_mapping(self, key, value):
         value_tuple = tuple(value)

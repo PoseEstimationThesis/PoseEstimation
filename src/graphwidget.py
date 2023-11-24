@@ -57,6 +57,8 @@ class GraphWidget(QWidget):
                             angle = float(values[2]) if values[2] else None
                             if angle is not None:
                                 angles.append(angle)
+                            else:
+                                angles.append(0)
                         except ValueError as e:
                             print(f"Error processing line {line}: {e}")
 
