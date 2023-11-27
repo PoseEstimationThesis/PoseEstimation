@@ -4,10 +4,13 @@ from logic.BodyEstimation import BodyEstimator
 from logic.DataManager import shared_data_instance
 
 class Camera:
-    def __init__(self, camera_id):
-        self.camera_id = camera_id
-        self.cap = cv2.VideoCapture(self.camera_id)
+    def __init__(self, camera_addr):
+        self.camera_addr = camera_addr
+        self.cap = cv2.VideoCapture(self.camera_addr)
         self.valid = self.cap.isOpened()
+
+    def create_id(self, camera_id):
+        self.camera_id = camera_id
         self.body_estimator = BodyEstimator(self.camera_id)
 
     def read_frame(self):

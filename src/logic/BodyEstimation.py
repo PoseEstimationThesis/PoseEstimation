@@ -66,7 +66,7 @@ class BodyEstimator:
                     x2, y2 = int(self.landmarks[idx2].x * self.frame.shape[1]), int(self.landmarks[idx2].y * self.frame.shape[0])
                     part_name = body_parts[idx1]
                     color = body_part_colors[part_name]
-                    cv.line(self.frame, (x1, y1), (x2, y2), color, 5)  # Draw colored lines
+                    cv.line(self.frame, (x1, y1), (x2, y2), color, 5, lineType=cv.LINE_AA)
 
     def calculate_all(self):
         self.left_elbow = self.angle_calculator.calculate_joint_angle_left(self.landmarks, 11, 13, 15)

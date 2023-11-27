@@ -20,7 +20,7 @@ class AngleWidget(QWidget):
         font.setBold(True)  # Make font bold
         self.angle_label.setFont(font)
 
-        self.setStyleSheet("background-color: #54939C; border-radius: 5px;")
+        # self.setStyleSheet("background-color: #54939C; border-radius: 5px;")
 
         self.layout.addWidget(self.angle_label)
         self.layout.setContentsMargins(10, 10, 10, 10)

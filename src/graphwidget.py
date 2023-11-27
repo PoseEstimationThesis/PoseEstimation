@@ -1,81 +1,84 @@
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QFileDialog
-from PySide6.QtCore import QFile, QTextStream, QDateTime, QTimer
-from PySide6.QtGui import QPainter
-from datetime import datetime
-
+import numpy as np
+import pandas as pd
+from datetime import timedelta
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtCore import QTimer, Signal
+from logic.DataManager import shared_data_instance
 
 class GraphWidget(QWidget):
-    def __init__(self, camera_id):
+    shown = Signal()
+    hidden = Signal()
+
+    def __init__(self, joint_name):
         super().__init__()
-        self.camera_id = camera_id
-        self.layout = QVBoxLayout(self)
+        self.joint_name = joint_name
+        # self.device_numbers = shared_data_instance.get_device_numbers()
+        # print(self.device_numbers)
 
-        self.figure = Figure()
-        self.ax = self.figure.add_subplot(111)
+        # Set up the matplotlib figure and canvas
+        self.figure, self.ax = plt.subplots()
         self.canvas = FigureCanvas(self.figure)
-        self.layout.addWidget(self.canvas)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
 
-        self.load_button = QPushButton(f"Load Data for {self.camera_id} ", self)
-        self.load_button.clicked.connect(self.load_data)
-        self.layout.addWidget(self.load_button)
-
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_graph)
-        self.timer.start(1000)
-
-    def load_data(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(None, "Load Data File", "", "CSV Files (*.csv);;All Files (*)",
-                                                   options=options)
-        data_file = QFile(file_name)
-        if not data_file.open(QFile.ReadOnly | QFile.Text):
-            print("Failed to open file:", file_name)
-            return
-
-        stream = QTextStream(data_file)
-        header_line = stream.readLine()  # Skip the header line
-
-        timestamps = []
-        angles = []
-        min_timestamp = None
-        while not stream.atEnd():
-            line = stream.readLine()
-            values = line.split(',')
-            if len(values) >= 3:
-                timestamp_str = values[0]
-                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
-                timestamps.append(timestamp)
-
-                # Check for non-header lines
-                if values[1].isdigit():  # Validate if the value is a number before conversion
-                    device_number = int(values[1])
-                    if self.camera_id == device_number:
-                        try:
-                            angle = float(values[2]) if values[2] else None
-                            if angle is not None:
-                                angles.append(angle)
-                            else:
-                                angles.append(0)
-                        except ValueError as e:
-                            print(f"Error processing line {line}: {e}")
-
-        data_file.close()
-        # Calculate timestamps in seconds from the epoch
-        timestamps_seconds_from_epoch = [(timestamp - min(timestamps)).total_seconds()
-                                         for timestamp in timestamps]
-
-        # Use x-values against timestamps in seconds for plotting
-        self.ax.plot(timestamps_seconds_from_epoch, angles)  # Change marker type if needed
-        self.ax.set_xlabel('Time')
+        self.ax.set_xlabel('Timestamp')
         self.ax.set_ylabel('Angle')
-        self.ax.set_title(f"CSV Data Chart for Device: {self.camera_id}")
-        self.ax.set_xlim(0, max(timestamps_seconds_from_epoch))  # Start from zero based on lowest timestamp
-        # Adjust y-axis limits according to your angles if needed
-        self.canvas.draw()
+        self.ax.set_title(f'{self.joint_name}')
 
+        # Setup a QTimer
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.on_update)
 
-    def update_graph(self):
-        self.canvas.draw()
+        self.shown.connect(lambda: self.timer.start(200))
+        self.hidden.connect(lambda: self.timer.stop())
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.shown.emit()
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.hidden.emit()
+
+    def on_update(self):
+        if self.isVisible() and shared_data_instance.record_data_running:
+            self.ax.clear()
+
+            window_size = 10  # Window size for rolling average
+            threshold = 15  # Threshold for detecting outliers
+            time_window = 5  # Time window in seconds for filtering data
+
+            for device_number in shared_data_instance.get_device_numbers():
+                original_data = shared_data_instance.get_data(device_number, self.joint_name)
+                if not original_data.empty:
+                    # Convert 'Timestamp' to datetime and create a copy of the data
+                    data = original_data.copy()
+                    data['Timestamp'] = pd.to_datetime(data['Timestamp'])
+
+                    # Filter for the last 5 seconds and create a copy to avoid SettingWithCopyWarning
+                    latest_timestamp = data['Timestamp'].max()
+                    start_time = latest_timestamp - timedelta(seconds=time_window)
+                    filtered_data = data[data['Timestamp'] >= start_time].copy()
+ 
+                    # Get the color for the device from the map
+                    color = shared_data_instance.get_color_for_device(device_number)
+
+                    # Apply rolling window and calculate the mean
+                    filtered_data['Rolling'] = filtered_data['Angle'].rolling(window=window_size, min_periods=1).mean()
+
+                    # Plot the rolling average
+                    self.ax.plot(filtered_data['Timestamp'], filtered_data['Rolling'], label=f'Device {device_number}', color=color)
+
+                    # Detect and plot outliers
+                    # outliers = filtered_data[np.abs(filtered_data['Angle'] - filtered_data['Rolling']) > threshold]
+                    # self.ax.scatter(outliers['Timestamp'], outliers['Angle'], color=color)
+
+            self.ax.set_xlabel('Timestamp')
+            self.ax.set_ylabel('Angle')
+            self.ax.set_title(f'{self.joint_name}')
+            self.ax.set_ylim(0, 360)
+            # self.ax.legend()
+            self.canvas.draw()
