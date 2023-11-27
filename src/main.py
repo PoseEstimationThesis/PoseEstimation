@@ -6,7 +6,7 @@ from worker import FrameProcessor, Camera
 from camerawidget import CameraWidget
 from anglewidget import AngleWidget
 from graphwidget import GraphWidget
-from feature import JointDict
+from feature.JointDict import shared_joint_dict
 import sys
 
 
@@ -39,6 +39,13 @@ class ApplicationManager:
         self.tab_widget.addTab(self.camera_tab, "Live Feeds")
         self.tab_widget.addTab(self.statistics_tab, "Statistics")
 
+        self.data_record_button = QPushButton("Run")
+        self.data_record_button.clicked.connect(shared_data_instance.switch_recording_data)
+        self.main_layout.addWidget(self.data_record_button)
+        
+        shared_data_instance.set_update_button_text_callback(self.update_button_text)
+        shared_data_instance.record_data_running = False
+
         self.frame_processors = []
         self.threads = []
         self.angle_widgets = []
@@ -47,15 +54,8 @@ class ApplicationManager:
         self.cameras = discover_cameras()
         self.setup_camera_tabs(self.cameras)
 
-        self.setup_angle_tabs()
+        # self.setup_angle_tabs()
         self.setup_graph_tabs()
-
-        self.data_record_button = QPushButton("Run")
-        self.data_record_button.clicked.connect(shared_data_instance.switch_recording_data)
-        self.main_layout.addWidget(self.data_record_button)
-        
-        shared_data_instance.set_update_button_text_callback(self.update_button_text)
-        shared_data_instance.record_data_running = False
 
         self.main_widget.show()
 
@@ -68,8 +68,12 @@ class ApplicationManager:
             if i % self.MAX_CAMERAS_PER_TAB == 0:
                 tab = QWidget()
                 grid = QGridLayout(tab)
-                self.camera_tab.addTab(tab, f"Cameras {i + 1}-{i + self.MAX_CAMERAS_PER_TAB}")
-            cam_widget = CameraWidget(camera.camera_id)
+                if self.MAX_CAMERAS_PER_TAB > len(self.cameras):
+                    self.camera_tab.addTab(tab, f"Cameras {i + 1}-{len(self.cameras)}")
+                else:
+                    self.camera_tab.addTab(tab, f"Cameras {i + 1}-{i + self.MAX_CAMERAS_PER_TAB}")
+                print(len(self.cameras))
+            cam_widget = CameraWidget(camera.camera_id, i)
             row = (i % self.MAX_CAMERAS_PER_TAB) // 2  # Change the divisor to adjust layout
             col = (i % self.MAX_CAMERAS_PER_TAB) % 2  # Change the modulus to adjust layout
             grid.addWidget(cam_widget, row, col)
@@ -86,6 +90,7 @@ class ApplicationManager:
             self.threads.append(thread)
 
             thread.start()
+            thread.setPriority(QThread.HighPriority)
 
     def setup_angle_tabs(self):
         for camera in self.cameras:
@@ -108,25 +113,27 @@ class ApplicationManager:
             self.threads.append(thread)
 
     def setup_graph_tabs(self):
-        for camera in self.cameras:
-            self.graph_widgets.append(GraphWidget(camera.camera_id))
+        joints = shared_joint_dict.get_all_keys()
+        for key in joints:
+            self.graph_widgets.append(GraphWidget(key))
+            print(key)
 
         grid = None
         for i, graph_widget in enumerate(self.graph_widgets):
             if i % self.MAX_GRAPHS_PER_TAB == 0:
                 tab = QWidget()
                 layout = QVBoxLayout(tab)
-                grid = QGridLayout()
-                layout.addLayout(grid)
-
-            grid.addWidget(graph_widget, i % self.MAX_GRAPHS_PER_TAB, 0)
-
-            if i % self.MAX_GRAPHS_PER_TAB == self.MAX_GRAPHS_PER_TAB - 1 or i == len(self.graph_widgets) - 1:
-                self.statistics_tab.addTab(tab, f"Graphs {i - self.MAX_GRAPHS_PER_TAB + 2}-{i + 1}")
-
-            thread = QThread()
-            graph_widget.moveToThread(thread)
-            self.threads.append(thread)
+                if self.MAX_GRAPHS_PER_TAB > len(joints):
+                    self.statistics_tab.addTab(tab, f"Graphs {i + 1}-{len(joints)}")
+                else:
+                    self.statistics_tab.addTab(tab, f"Graphs {i + 1}-{i + self.MAX_GRAPHS_PER_TAB}")
+                # grid = QGridLayout()
+                # layout.addLayout(grid)
+            grid.addWidget(graph_widget, i % self.MAX_GRAPHS_PER_TAB, 0)   
+        #
+        #     thread = QThread()
+        #     graph_widget.moveToThread(thread)
+        #     self.threads.append(thread)
 
     def run(self):
         return self.app.exec()

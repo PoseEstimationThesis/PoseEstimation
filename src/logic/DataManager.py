@@ -1,6 +1,9 @@
 import pandas as pd
 import atexit
 from datetime import datetime
+from odf.opendocument import OpenDocumentSpreadsheet
+from odf.table import Table, TableRow, TableCell
+from odf.text import P
 
 class DataManager:
     def __init__(self):
@@ -15,7 +18,7 @@ class DataManager:
         if self.record_data_running:
             self.update_button_text_callback("Stop")
         else:
-            self.export_to_csv()
+            self.export_to_ods()
             self.update_button_text_callback("Run")
 
     def get_data(self, device_number, joint_name):
@@ -33,17 +36,50 @@ class DataManager:
                                  columns=["Device Number", "Joint Name", "Angle", "Timestamp"])
         self.data = pd.concat([self.data, new_entry], ignore_index=True)
 
-    def export_to_csv(self):
+    def export_to_ods(self, filename="Joint_Data.ods"):
+        # Create an OpenDocument Spreadsheet
+        ods = OpenDocumentSpreadsheet()
+
         # Group data by 'Joint Name'
         grouped_data = self.data.groupby('Joint Name')
 
         for joint_name, group in grouped_data:
-            # Filter data for each 'Joint Name' and create a DataFrame with specific columns
-            filtered_data = group[["Timestamp", "Device Number", "Angle"]]
+            # Drop the 'Joint Name' column
+            group = group.drop(columns=['Joint Name'])
 
-            # Export filtered data to CSV for each 'Joint Name'
-            joint_csv_filename = f"{joint_name}_data.csv"
-            filtered_data.to_csv(joint_csv_filename, index=False)
+            # Create a table (sheet) for each joint name
+            table = Table(name=joint_name)
+            ods.spreadsheet.addElement(table)
+
+            # Add metadata row for the Joint Name
+            metadata_row = TableRow()
+            table.addElement(metadata_row)
+            metadata_cell = TableCell()
+            metadata_row.addElement(metadata_cell)
+            metadata_paragraph = P(text=f"Joint Name: {joint_name}")
+            metadata_cell.addElement(metadata_paragraph)
+
+            # Add header row
+            header_row = TableRow()
+            table.addElement(header_row)
+            for col in group.columns:
+                tc = TableCell()
+                header_row.addElement(tc)
+                p = P(text=str(col))
+                tc.addElement(p)
+
+            # Add data rows to the table
+            for _, row in group.iterrows():
+                tr = TableRow()
+                table.addElement(tr)
+                for cell in row:
+                    tc = TableCell()
+                    tr.addElement(tc)
+                    p = P(text=str(cell))
+                    tc.addElement(p)
+
+        # Save the file
+        ods.save(filename)
 
 
 shared_data_instance = DataManager()

@@ -3,9 +3,10 @@ from PySide6.QtGui import QPixmap, QImage, QFont
 from PySide6.QtCore import Qt
 
 class CameraWidget(QWidget):
-    def __init__(self, camera_index):
+    def __init__(self, camera_index, camera_id):
         super().__init__()
         self.camera_index = camera_index
+        self.camera_id = camera_id
         self.layout = QVBoxLayout(self)
 
 
@@ -14,7 +15,7 @@ class CameraWidget(QWidget):
         self.spacer_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
 
         # Create a label to display the camera index
-        self.index_label = QLabel(f"Camera {camera_index}")
+        self.index_label = QLabel(f"Camera {camera_id + 1}")
         self.index_label.setAlignment(Qt.AlignCenter)
         self.index_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         

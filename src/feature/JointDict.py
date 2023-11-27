@@ -20,6 +20,8 @@ class JointDict:
     def get_reverse(self, value):
         value_tuple = tuple(value)
         return self.reverse_dict.get(value_tuple, None)
-
+    
+    def get_all_keys(self):
+        return list(self.forward_dict.keys())
 
 shared_joint_dict = JointDict()
