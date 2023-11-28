@@ -10,7 +10,7 @@ class Camera:
         self.valid = self.cap.isOpened()
 
     def create_id(self, camera_id):
-        self.camera_id = camera_id+1
+        self.camera_id = camera_id
         self.body_estimator = BodyEstimator(self.camera_id)
 
     def read_frame(self):
@@ -28,7 +28,7 @@ class Camera:
 class FrameProcessor(QObject):
     FRAMES_PER_SECOND = 120
     
-    frameProcessedSignal = Signal(object, int)
+    frameProcessedSignal = Signal(int, object, object)
     finished = Signal(int)
 
     def start_processing(self):
@@ -50,12 +50,10 @@ class FrameProcessor(QObject):
             # Here insert mediapipe logic
             processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.camera.body_estimator.estimate_body(processed_frame)
-            self.camera.body_estimator.draw_landmarks()
             # Calculate joint values and append them to DataFrame only when recording
             if shared_data_instance.record_data_running:
                 self.camera.body_estimator.calculate_all()
-            # print(f"Processing frame from camera {self.camera.camera_id}")
-            self.frameProcessedSignal.emit(processed_frame, self.camera.camera_id)
+            self.frameProcessedSignal.emit(self.camera.camera_id, self.camera.body_estimator.landmarks, processed_frame)
         else:
             # print(f"Camera {self.camera.camera_id} finished or failed to read frame.")
             self.finished.emit(self.camera.camera_id)

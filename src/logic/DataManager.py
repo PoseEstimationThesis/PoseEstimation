@@ -13,6 +13,7 @@ class DataManager:
         self.update_button_text_callback = None
         self.device_color_map = {}
         self.available_colors = self.get_shuffled_colors()
+        self.device_numbers = None
 
     def get_shuffled_colors(self, seed=0):
         random.seed(seed)
@@ -39,17 +40,16 @@ class DataManager:
 
     def get_data(self, device_number, joint_name):
         self.data.reset_index(drop=True, inplace=True)
-        mask = (self.data["Device Number"] == device_number) & (self.data["Joint Name"] == joint_name)
-        return self.data[mask]
+        data_copy = self.data.copy()
+        mask = (data_copy["Device Number"] == device_number) & (data_copy["Joint Name"] == joint_name)
+        return data_copy[mask]
 
     def set_data(self, device_number, joint_name, angle):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         new_entry = pd.DataFrame([[device_number, joint_name, angle, timestamp]],
                                  columns=["Device Number", "Joint Name", "Angle", "Timestamp"])
-        self.data = pd.concat([self.data, new_entry], ignore_index=True)
-
-    def get_device_numbers(self):
-        return self.data["Device Number"].unique().tolist()
+        new_entry_cleaned = new_entry.dropna(axis=1, how='all') # Drop all NA columns
+        self.data = pd.concat([self.data, new_entry_cleaned], ignore_index=True)
 
     def export_to_ods(self, filename="Joint_Data.ods"):
         # Create an OpenDocument Spreadsheet
