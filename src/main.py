@@ -1,5 +1,4 @@
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget, QTabWidget, QGridLayout, QPushButton, \
-    QFileDialog
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget, QTabWidget, QGridLayout, QPushButton, QFileDialog
 from PySide6.QtCore import QThread, QSize, QCoreApplication
 from logic.DataManager import shared_data_instance
 from worker import FrameProcessor, Camera
@@ -13,10 +12,13 @@ import sys
 def discover_cameras():
     # Simple camera discovery
     cameras = []
+    camera_id_counter = 0
     for i in range(10):
         cam = Camera(i)
         if cam.is_valid():
+            cam.create_id(camera_id_counter)
             cameras.append(cam)
+            camera_id_counter += 1
     return cameras
 
 
@@ -116,24 +118,22 @@ class ApplicationManager:
         joints = shared_joint_dict.get_all_keys()
         for key in joints:
             self.graph_widgets.append(GraphWidget(key))
-            print(key)
 
-        grid = None
         for i, graph_widget in enumerate(self.graph_widgets):
             if i % self.MAX_GRAPHS_PER_TAB == 0:
                 tab = QWidget()
-                layout = QVBoxLayout(tab)
+                # layout = QVBoxLayout(tab)
+                grid = QGridLayout(tab)
+                # layout.addLayout(grid)
                 if self.MAX_GRAPHS_PER_TAB > len(joints):
                     self.statistics_tab.addTab(tab, f"Graphs {i + 1}-{len(joints)}")
                 else:
                     self.statistics_tab.addTab(tab, f"Graphs {i + 1}-{i + self.MAX_GRAPHS_PER_TAB}")
-                # grid = QGridLayout()
-                # layout.addLayout(grid)
             grid.addWidget(graph_widget, i % self.MAX_GRAPHS_PER_TAB, 0)   
-        #
-        #     thread = QThread()
-        #     graph_widget.moveToThread(thread)
-        #     self.threads.append(thread)
+
+            thread = QThread()
+            graph_widget.moveToThread(thread)
+            self.threads.append(thread)
 
     def run(self):
         return self.app.exec()

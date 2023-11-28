@@ -1,5 +1,7 @@
 import pandas as pd
 import atexit
+import random
+import matplotlib.colors as mcolors
 from datetime import datetime
 from odf.opendocument import OpenDocumentSpreadsheet
 from odf.table import Table, TableRow, TableCell
@@ -9,6 +11,20 @@ class DataManager:
     def __init__(self):
         self.data = pd.DataFrame(columns=["Device Number", "Joint Name", "Angle", "Timestamp"])
         self.update_button_text_callback = None
+        self.device_color_map = {}
+        self.available_colors = self.get_shuffled_colors()
+
+    def get_shuffled_colors(self, seed=0):
+        random.seed(seed)
+        colors = list(mcolors.CSS4_COLORS.values())
+        random.shuffle(colors)
+        return colors
+
+    def get_color_for_device(self, device_number):
+        if device_number not in self.device_color_map:
+            color = self.available_colors[len(self.device_color_map) % len(self.available_colors)]
+            self.device_color_map[device_number] = color
+        return self.device_color_map[device_number]
 
     def set_update_button_text_callback(self, callback):
         self.update_button_text_callback = callback
@@ -23,18 +39,16 @@ class DataManager:
 
     def get_data(self, device_number, joint_name):
         mask = (self.data["Device Number"] == device_number) & (self.data["Joint Name"] == joint_name)
-        subset = self.data[mask]
-        if not subset.empty:
-            latest_angle = subset["Angle"].iloc[-1]
-            return latest_angle
-        else:
-            return None
+        return self.data[mask]
 
     def set_data(self, device_number, joint_name, angle):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         new_entry = pd.DataFrame([[device_number, joint_name, angle, timestamp]],
                                  columns=["Device Number", "Joint Name", "Angle", "Timestamp"])
         self.data = pd.concat([self.data, new_entry], ignore_index=True)
+
+    def get_device_numbers(self):
+        return self.data["Device Number"].unique().tolist()
 
     def export_to_ods(self, filename="Joint_Data.ods"):
         # Create an OpenDocument Spreadsheet
