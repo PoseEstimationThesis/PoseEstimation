@@ -97,9 +97,9 @@ class ApplicationManager:
     def setup_angle_tabs(self):
         for camera in self.cameras:
             self.angle_widgets.append(
-                AngleWidget(camera.camera_id, JointDict.shared_joint_dict.get_reverse({"11", "13", "15"})))
+                AngleWidget(camera.camera_id, shared_joint_dict.get_reverse({"11", "13", "15"})))
             self.angle_widgets.append(
-                AngleWidget(camera.camera_id, JointDict.shared_joint_dict.get_reverse({"12", "14", "16"})))
+                AngleWidget(camera.camera_id, shared_joint_dict.get_reverse({"12", "14", "16"})))
         grid = None
         for i, angle_widget in enumerate(self.angle_widgets):
             if i % self.MAX_ANGLES_PER_TAB == 0:

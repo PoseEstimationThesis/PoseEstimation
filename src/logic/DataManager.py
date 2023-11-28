@@ -38,6 +38,7 @@ class DataManager:
             self.update_button_text_callback("Run")
 
     def get_data(self, device_number, joint_name):
+        self.data.reset_index(drop=True, inplace=True)
         mask = (self.data["Device Number"] == device_number) & (self.data["Joint Name"] == joint_name)
         return self.data[mask]
 

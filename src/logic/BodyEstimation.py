@@ -22,7 +22,7 @@ class BodyEstimator:
         if results.pose_landmarks:
             self.landmarks = results.pose_landmarks.landmark
         else:
-            return None
+            return 0
 
     def draw_landmarks(self):
         if self.landmarks is not None:
