@@ -3,9 +3,9 @@ from PySide6.QtGui import QPixmap, QImage, QFont
 from PySide6.QtCore import Qt
 
 class CameraWidget(QWidget):
-    def __init__(self, camera_index, camera_id):
+    def __init__(self, camera_id):
         super().__init__()
-        self.camera_index = camera_index
+        self.camera_id = camera_id
         self.camera_id = camera_id
         self.layout = QVBoxLayout(self)
 
@@ -15,7 +15,7 @@ class CameraWidget(QWidget):
         self.spacer_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
 
         # Create a label to display the camera index
-        self.index_label = QLabel(f"Camera {camera_id + 1}")
+        self.index_label = QLabel(f"Camera {camera_id}")
         self.index_label.setAlignment(Qt.AlignCenter)
         self.index_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         
@@ -38,8 +38,8 @@ class CameraWidget(QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(5, 1, 5, 5)
 
-    def update_image(self, frame, camera_index):
-        if camera_index == self.camera_index:
+    def update_image(self, frame, camera_id):
+        if camera_id == self.camera_id:
             height, width, channel = frame.shape
             bytes_per_line = 3 * width
             q_img = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
@@ -53,7 +53,7 @@ class CameraWidget(QWidget):
             # Rescale the pixmap when the widget is resized
             self.image_label.setPixmap(self.image_label.pixmap().scaled(self.image_label.width(), self.image_label.height(), Qt.KeepAspectRatio))
 
-    def notify_camera_stopped(self, camera_index):
-        if camera_index == self.camera_index:
+    def notify_camera_stopped(self, camera_id):
+        if camera_id == self.camera_id:
             pass
-            # print(f"Camera {camera_index} stopped.")
+            # print(f"Camera {camera_id} stopped.")

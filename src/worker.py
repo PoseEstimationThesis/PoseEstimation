@@ -10,7 +10,7 @@ class Camera:
         self.valid = self.cap.isOpened()
 
     def create_id(self, camera_id):
-        self.camera_id = camera_id
+        self.camera_id = camera_id+1
         self.body_estimator = BodyEstimator(self.camera_id)
 
     def read_frame(self):

@@ -75,7 +75,7 @@ class ApplicationManager:
                 else:
                     self.camera_tab.addTab(tab, f"Cameras {i + 1}-{i + self.MAX_CAMERAS_PER_TAB}")
                 print(len(self.cameras))
-            cam_widget = CameraWidget(camera.camera_id, i)
+            cam_widget = CameraWidget(camera.camera_id)
             row = (i % self.MAX_CAMERAS_PER_TAB) // 2  # Change the divisor to adjust layout
             col = (i % self.MAX_CAMERAS_PER_TAB) % 2  # Change the modulus to adjust layout
             grid.addWidget(cam_widget, row, col)
