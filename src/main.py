@@ -24,7 +24,7 @@ def discover_cameras():
 
 class ApplicationManager:
     MAX_CAMERAS_PER_TAB = 4
-    MAX_ANGLES_PER_TAB = 8
+    # MAX_ANGLES_PER_TAB = 8
     MAX_GRAPHS_PER_TAB = 8
 
     def __init__(self):
@@ -116,20 +116,20 @@ class ApplicationManager:
 
     def setup_graph_tabs(self):
         joints = shared_joint_dict.get_all_keys()
-        for key in joints:
-            self.graph_widgets.append(GraphWidget(key))
+        tab_index = 0
+        for i, key in enumerate(joints):
+            # Determine if the widget is the first in a tab
+            show_legend = i % self.MAX_GRAPHS_PER_TAB == 0
+            graph_widget = GraphWidget(key, show_legend)
+            self.graph_widgets.append(graph_widget)
 
-        for i, graph_widget in enumerate(self.graph_widgets):
             if i % self.MAX_GRAPHS_PER_TAB == 0:
                 tab = QWidget()
-                # layout = QVBoxLayout(tab)
                 grid = QGridLayout(tab)
-                # layout.addLayout(grid)
-                if self.MAX_GRAPHS_PER_TAB > len(joints):
-                    self.statistics_tab.addTab(tab, f"Graphs {i + 1}-{len(joints)}")
-                else:
-                    self.statistics_tab.addTab(tab, f"Graphs {i + 1}-{i + self.MAX_GRAPHS_PER_TAB}")
-            grid.addWidget(graph_widget, i % self.MAX_GRAPHS_PER_TAB, 0)   
+                self.statistics_tab.addTab(tab, f"Graphs {tab_index * self.MAX_GRAPHS_PER_TAB + 1}-{min((tab_index + 1) * self.MAX_GRAPHS_PER_TAB, len(joints))}")
+                tab_index += 1
+
+            grid.addWidget(graph_widget, i % self.MAX_GRAPHS_PER_TAB, 0)
 
             thread = QThread()
             graph_widget.moveToThread(thread)

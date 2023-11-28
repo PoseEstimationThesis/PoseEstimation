@@ -39,7 +39,7 @@ class CameraWidget(QWidget):
         self.layout.setContentsMargins(5, 1, 5, 5)
 
     def update_image(self, frame, camera_id):
-        if camera_id == self.camera_id:
+        if self.isVisible() and camera_id == self.camera_id:
             height, width, channel = frame.shape
             bytes_per_line = 3 * width
             q_img = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
@@ -49,7 +49,7 @@ class CameraWidget(QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if self.image_label.pixmap() is not None:
+        if self.isVisible() and self.image_label.pixmap() is not None:
             # Rescale the pixmap when the widget is resized
             self.image_label.setPixmap(self.image_label.pixmap().scaled(self.image_label.width(), self.image_label.height(), Qt.KeepAspectRatio))
 
