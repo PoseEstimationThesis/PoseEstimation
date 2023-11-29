@@ -11,7 +11,6 @@ class CameraWidget(QWidget):
         self.camera_id = camera_id
         self.layout = QVBoxLayout(self)
 
-
         # Spacer label to push down the index label
         self.spacer_label = QLabel("")
         self.spacer_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)

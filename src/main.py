@@ -3,11 +3,12 @@ from PySide6.QtCore import QThread, QSize, QCoreApplication
 from logic.DataManager import shared_data_instance
 from worker import FrameProcessor, Camera
 from camerawidget import CameraWidget
-from anglewidget import AngleWidget
+# from anglewidget import AngleWidget
 from graphwidget import GraphWidget
+from modelwidget import ModelWidget
 from feature.JointDict import shared_joint_dict
 import sys
-from constants import MAX_CAMERAS_PER_TAB, MAX_GRAPHS_PER_TAB
+from constants import MAX_CAMERAS_PER_TAB, MAX_GRAPHS_PER_TAB, MAX_MODELS_PER_TAB
 
 def discover_cameras():
     cameras = []
@@ -32,10 +33,12 @@ class ApplicationManager:
         # Create tabs for Cameras and Statistics
         self.camera_tab = QTabWidget()
         self.statistics_tab = QTabWidget()
+        self.models_tab = QTabWidget()
 
         self.main_layout.addWidget(self.tab_widget)
-        self.tab_widget.addTab(self.camera_tab, "Live Feeds")
+        self.tab_widget.addTab(self.camera_tab, "Live Feed")
         self.tab_widget.addTab(self.statistics_tab, "Statistics")
+        self.tab_widget.addTab(self.models_tab, "3D model")
 
         self.data_record_button = QPushButton("Run")
         self.data_record_button.clicked.connect(shared_data_instance.switch_recording_data)
@@ -48,12 +51,14 @@ class ApplicationManager:
         self.threads = []
         self.angle_widgets = []
         self.graph_widgets = []
+        self.model_widgets = []
 
         self.cameras, shared_data_instance.device_numbers = discover_cameras()
         self.setup_camera_tabs(self.cameras)
 
         # self.setup_angle_tabs()
         self.setup_graph_tabs()
+        self.setup_model_tabs()
 
         self.main_widget.show()
 
@@ -90,25 +95,25 @@ class ApplicationManager:
             thread.start()
             thread.setPriority(QThread.HighPriority)
 
-    def setup_angle_tabs(self):
-        for camera in self.cameras:
-            self.angle_widgets.append(
-                AngleWidget(camera.camera_id, shared_joint_dict.get_reverse({"11", "13", "15"})))
-            self.angle_widgets.append(
-                AngleWidget(camera.camera_id, shared_joint_dict.get_reverse({"12", "14", "16"})))
-        grid = None
-        for i, angle_widget in enumerate(self.angle_widgets):
-            if i % MAX_ANGLES_PER_TAB == 0:
-                tab = QWidget()
-                grid = QGridLayout(tab)
-            row = (i % MAX_ANGLES_PER_TAB) // 2
-            col = (i % MAX_ANGLES_PER_TAB) % 2
-            grid.addWidget(angle_widget, row, col)
-            self.statistics_tab.addTab(tab, f"Angles {i + 1}-{i + MAX_ANGLES_PER_TAB}")
-
-            thread = QThread()
-            angle_widget.moveToThread(thread)
-            self.threads.append(thread)
+    # def setup_angle_tabs(self):
+    #     for camera in self.cameras:
+    #         self.angle_widgets.append(
+    #             AngleWidget(camera.camera_id, shared_joint_dict.get_reverse({"11", "13", "15"})))
+    #         self.angle_widgets.append(
+    #             AngleWidget(camera.camera_id, shared_joint_dict.get_reverse({"12", "14", "16"})))
+    #     grid = None
+    #     for i, angle_widget in enumerate(self.angle_widgets):
+    #         if i % MAX_ANGLES_PER_TAB == 0:
+    #             tab = QWidget()
+    #             grid = QGridLayout(tab)
+    #         row = (i % MAX_ANGLES_PER_TAB) // 2
+    #         col = (i % MAX_ANGLES_PER_TAB) % 2
+    #         grid.addWidget(angle_widget, row, col)
+    #         self.statistics_tab.addTab(tab, f"Angles {i + 1}-{i + MAX_ANGLES_PER_TAB}")
+    #
+    #         thread = QThread()
+    #         angle_widget.moveToThread(thread)
+    #         self.threads.append(thread)
 
     def setup_graph_tabs(self):
         joints = shared_joint_dict.get_all_keys()
@@ -132,6 +137,27 @@ class ApplicationManager:
 
             thread = QThread()
             graph_widget.moveToThread(thread)
+            self.threads.append(thread)
+
+    def setup_model_tabs(self):
+        tab_index = 0
+        for i, camera in enumerate(self.cameras):
+            model_widget = ModelWidget(camera.camera_id)
+            self.model_widgets.append(model_widget)
+
+            if i % MAX_MODELS_PER_TAB == 0:
+                tab = QWidget()
+                grid = QGridLayout(tab)
+                self.models_tab.addTab(tab, f"Model {tab_index * MAX_GRAPHS_PER_TAB + 1}")
+                tab_index += 1
+
+            row = (i % MAX_MODELS_PER_TAB) // 2
+            col = (i % MAX_MODELS_PER_TAB) % 2
+
+            grid.addWidget(model_widget, row, col)
+
+            thread = QThread()
+            model_widget.moveToThread(thread)
             self.threads.append(thread)
 
     def run(self):
