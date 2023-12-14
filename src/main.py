@@ -14,7 +14,7 @@ def discover_cameras():
     cameras = []
     camera_ids = []
     camera_id_counter = 1
-    for i in range(10):
+    for i in range(0,10):
         cam = Camera(i)
         if cam.is_valid():
             cam.create_id(camera_id_counter)
@@ -148,7 +148,7 @@ class ApplicationManager:
             if i % MAX_MODELS_PER_TAB == 0:
                 tab = QWidget()
                 grid = QGridLayout(tab)
-                self.models_tab.addTab(tab, f"Model {tab_index * MAX_GRAPHS_PER_TAB + 1}")
+                self.models_tab.addTab(tab, f"Model {tab_index * MAX_MODELS_PER_TAB + 1}")
                 tab_index += 1
 
             row = (i % MAX_MODELS_PER_TAB) // 2

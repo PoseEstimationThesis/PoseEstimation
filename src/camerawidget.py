@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
 from PySide6.QtGui import QPixmap, QImage, QFont
 from PySide6.QtCore import Qt
 import cv2 as cv
-from constants import VISIBILITY_THRESHOLD
+from constants import VISIBILITY_THRESHOLD, CONNECTIONS, BODY_PARTS_NAME, BODY_PARTS_COLORS, LANDMARK_COLOR
 
 class CameraWidget(QWidget):
     def __init__(self, camera_id):
@@ -39,6 +39,8 @@ class CameraWidget(QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(5, 1, 5, 5)
 
+        self.standard_width, self.standard_height = 1920, 1080  # Standard dimensions for calculating scaling
+
     def update_image(self, frame):
             height, width, channel = frame.shape
             bytes_per_line = 3 * width
@@ -55,47 +57,39 @@ class CameraWidget(QWidget):
     def draw_landmarks(self, camera_id, landmarks, frame):
         if self.isVisible() and camera_id == self.camera_id:
             if landmarks is not None:
-                connections = [
-                    (11, 12), (12, 24), (11, 23), # Torso
-                    (13, 11), (13, 15), (15, 17), # Left Arm
-                    (14, 12), (14, 16), (16, 18), # Right Arm
-                    (25, 23), (25, 27), (27, 29), # Left Leg 
-                    (26, 24), (26, 28), (28, 30)  # Right Leg
-                ]
 
-                body_parts = {
-                    11: "Torso", 12: "Torso", 23: "Torso", 24: "Torso",
-                    13: "Left Arm", 15: "Left Arm", 17: "Left Arm",
-                    14: "Right Arm" ,16: "Right Arm", 18: "Right Arm",
-                    25: "Left Leg", 27: "Left Leg", 29: "Left Leg",
-                    26: "Right Leg", 28: "Right Leg", 30: "Right Leg"
-                }
+                scaling_factor = min(frame.shape[1] / self.standard_width, frame.shape[0] / self.standard_height)
 
-                body_part_colors = {
-                    "Torso": (255, 0, 0),  # Red
-                    "Right Arm": (255, 128, 0),  # Orange
-                    "Right Leg": (255, 255, 0),  # Yellow
-                    "Left Arm": (255, 0, 255),  # Magenta
-                    "Left Leg": (0, 0, 255)  # Blue
-                }
+                for connection in CONNECTIONS:
+                    idx1, idx2 = connection
+                    if idx1 in BODY_PARTS_NAME and idx2 in BODY_PARTS_NAME and landmarks[idx1].visibility > VISIBILITY_THRESHOLD and landmarks[idx2].visibility > VISIBILITY_THRESHOLD:
+                        x1, y1 = int(landmarks[idx1].x * frame.shape[1]), int(landmarks[idx1].y * frame.shape[0])
+                        x2, y2 = int(landmarks[idx2].x * frame.shape[1]), int(landmarks[idx2].y * frame.shape[0])
+                        part_name = BODY_PARTS_NAME[idx2]
+                        color = BODY_PARTS_COLORS[part_name]
+                        cv.line(frame, (x1, y1), (x2, y2), color, int(10 * scaling_factor), lineType=cv.LINE_AA)
 
                 for idx, landmark in enumerate(landmarks):
                     # Check if the landmark is part of the body
-                    if idx in body_parts and landmark.visibility > VISIBILITY_THRESHOLD:
-                        x, y = int(landmark.x * frame.shape[1]), int(landmark.y * frame.shape[0])
-                        part_name = body_parts[idx]
-                        color = body_part_colors[part_name]
-                        cv.circle(frame, (x, y), 5, color, -1)  # Draw a colored circle at each body landmark
-                        cv.putText(frame, str(idx), (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, color, 2)  # Display landmark number
+                    if idx in BODY_PARTS_NAME and landmark.visibility > VISIBILITY_THRESHOLD:
+                        x, y, z = int(landmark.x * frame.shape[1]), int(landmark.y * frame.shape[0]), landmark.z
+                        if 0 <= x < frame.shape[1] and 0 <= y < frame.shape[0]:
+                            part_name = BODY_PARTS_NAME[idx]
+                            outline_color = BODY_PARTS_COLORS[part_name]
 
-                for connection in connections:
-                    idx1, idx2 = connection
-                    if idx1 in body_parts and idx2 in body_parts and landmarks[idx1].visibility > VISIBILITY_THRESHOLD and landmarks[idx2].visibility > VISIBILITY_THRESHOLD:
-                        x1, y1 = int(landmarks[idx1].x * frame.shape[1]), int(landmarks[idx1].y * frame.shape[0])
-                        x2, y2 = int(landmarks[idx2].x * frame.shape[1]), int(landmarks[idx2].y * frame.shape[0])
-                        part_name = body_parts[idx1]
-                        color = body_part_colors[part_name]
-                        cv.line(frame, (x1, y1), (x2, y2), color, 5, lineType=cv.LINE_AA)
+                            normalized_z = max(min(z, 1), -1)
+
+                            # Blend towards white for negative z, towards black for positive z
+                            if normalized_z < 0:
+                                blended_color = [int(c + (255 - c) * normalized_z) for c in LANDMARK_COLOR]
+                            else:
+                                blended_color = [int(c * (1 + normalized_z)) for c in LANDMARK_COLOR]
+
+                            # Draw the circle with the blended color
+
+                            cv.circle(frame, (x, y), int(15 * scaling_factor), outline_color, -1)
+                            cv.circle(frame, (x,y), int(13 * scaling_factor), blended_color, -1)
+                            # cv.putText(frame, str(idx), (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, outline_color, 2)  # Display landmark number
             self.update_image(frame)                
 
     def notify_camera_stopped(self, camera_id):
