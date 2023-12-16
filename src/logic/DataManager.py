@@ -24,7 +24,56 @@ class DataManager:
         self.device_color_map = {}
         self.available_colors = self.get_shuffled_colors()
 
-        # self.angle_data = pd.DataFrame(columns=["Device Number", "Timestamp"])
+    def reset_dataframes(self):
+        empty_data = pd.DataFrame(columns=self.landmark_data.columns)
+        empty_data.index = pd.MultiIndex(levels=[[], [], []], 
+                                         codes=[[], [], []], 
+                                         names=self.landmark_data.index.names)
+        self.landmark_data = empty_data
+
+        empty_world_data = pd.DataFrame(columns=self.world_landmark_data.columns)
+        empty_world_data.index = pd.MultiIndex(levels=[[], [], []], 
+                                               codes=[[], [], []], 
+                                               names=self.world_landmark_data.index.names)
+        self.world_landmark_data = empty_world_data
+
+    def set_update_button_text_callback(self, callback):
+        self.update_button_text_callback = callback
+
+    def switch_recording_data(self):
+        self.record_data_running = not self.record_data_running
+        if self.record_data_running:
+            self.reset_dataframes()
+            self.update_button_text_callback("Stop")
+            print(self.landmark_data, self.world_landmark_data)
+        else:
+            self.update_button_text_callback("Run")
+            print(self.landmark_data, self.world_landmark_data)
+
+    def set_landmark_data(self, landmark_data):
+        # Convert the dictionary into a DataFrame
+        new_data = []
+        for key, values in landmark_data.items():
+            new_data.append((*key, values['x'], values['y'], values['z'], values['visibility']))
+
+        new_df = pd.DataFrame(new_data, columns=self.landmark_data.index.names + self.landmark_data.columns.tolist())
+        new_df.set_index(['Device Number', 'Timestamp', 'Joint ID'], inplace=True)
+        if not self.landmark_data.empty and not new_df.empty:
+            self.landmark_data = pd.concat([self.landmark_data, new_df])
+        elif self.landmark_data.empty:
+            self.landmark_data = new_df
+
+    def set_world_landmark_data(self, world_landmark_data):
+        new_data = []
+        for key, values in world_landmark_data.items():
+            new_data.append((*key, values['x'], values['y'], values['z'], values['visibility']))
+
+        new_df = pd.DataFrame(new_data, columns=self.world_landmark_data.index.names + self.world_landmark_data.columns.tolist())
+        new_df.set_index(['Device Number', 'Timestamp', 'Joint ID'], inplace=True)
+        if not self.world_landmark_data.empty and not new_df.empty:
+            self.world_landmark_data = pd.concat([self.world_landmark_data, new_df])
+        elif self.world_landmark_data.empty:
+            self.world_landmark_data = new_df
 
     def get_shuffled_colors(self, seed=0):
         random.seed(seed)
@@ -37,52 +86,6 @@ class DataManager:
             color = self.available_colors[len(self.device_color_map) % len(self.available_colors)]
             self.device_color_map[device_number] = color
         return self.device_color_map[device_number]
-
-    def set_update_button_text_callback(self, callback):
-        self.update_button_text_callback = callback
-
-    def switch_recording_data(self):
-        self.record_data_running = not self.record_data_running
-        if self.record_data_running:
-            self.update_button_text_callback("Stop")
-        else:
-            # self.export_to_ods()
-            self.update_button_text_callback("Run")
-
-    # def get_data(self, device_number, joint_name):
-    #     self.data.reset_index(drop=True, inplace=True)
-    #     data_copy = self.data.copy()
-    #     mask = (data_copy["Device Number"] == device_number) & (data_copy["Joint Name"] == joint_name)
-    #     return data_copy[mask]
- 
-    def set_landmark_data(self, landmark_data):
-        # Convert the dictionary into a DataFrame
-        new_data = []
-        for key, values in landmark_data.items():
-            new_data.append((*key, values['x'], values['y'], values['z'], values['visibility']))
-
-        new_df = pd.DataFrame(new_data, columns=self.landmark_data.index.names + self.landmark_data.columns.tolist())
-        new_df.set_index(['Device Number', 'Timestamp', 'Joint ID'], inplace=True)
-
-        # Append to the existing DataFrame
-        self.landmark_data = pd.concat([self.landmark_data, new_df])
-        # print(self.landmark_data)
-
-    def set_world_landmark_data(self, world_landmark_data):
-        new_data = []
-        for key, values in world_landmark_data.items():
-            new_data.append((*key, values['x'], values['y'], values['z'], values['visibility']))
-
-        new_df = pd.DataFrame(new_data, columns=self.world_landmark_data.index.names + self.world_landmark_data.columns.tolist())
-        new_df.set_index(['Device Number', 'Timestamp', 'Joint ID'], inplace=True)
-
-        # Append to the existing DataFrame
-        self.world_landmark_data = pd.concat([self.world_landmark_data, new_df])
-        # data_df = pd.DataFrame.from_dict(data, orient='index', columns=['x', 'y', 'z', 'visibility'])
-        # self.world_landmark_data = pd.concat([self.world_landmark_data, data_df])
-
-        # print(self.landmark_data)
-
     # def set_data(self, device_number, joint_name, angle):
     #     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     #     new_entry = pd.DataFrame([[device_number, joint_name, angle, timestamp]],

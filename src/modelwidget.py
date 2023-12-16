@@ -54,7 +54,11 @@ class ModelWidget(QWidget):
             self.ax.set_zlim(zlim)
             self.scale_level = self.calculate_zoom(xlim, ylim, zlim)
             
-            camera_data = shared_data_instance.world_landmark_data.xs(self.camera_id, level='Device Number')
+            # Dataframe could be empty if just cleared by pressing "Run"
+            try:
+                camera_data = shared_data_instance.world_landmark_data.xs(self.camera_id, level='Device Number')
+            except:
+                pass
             if not camera_data.empty:
                 # Get the latest timestamp's data
                 latest_timestamp = camera_data.index.get_level_values('Timestamp').max()
