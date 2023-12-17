@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt, QTimer, QCoreApplication
-from logic.DataManager import shared_data_instance
+from logic.datamanager import shared_data_instance
 
 class AngleWidget(QWidget):
     def __init__(self, camera_id, joint_name):

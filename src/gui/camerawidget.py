@@ -79,11 +79,11 @@ class CameraWidget(QWidget):
 
                             normalized_z = max(min(z, 1), -1)
 
-                            # Blend towards white for negative z, towards black for positive z
+                            # Blend towards white for negative z (closer), towards black for positive z (further)
                             if normalized_z < 0:
-                                blended_color = [int(c + (255 - c) * normalized_z) for c in LANDMARK_COLOR]
+                                blended_color = [int(c + (255 - c) * -normalized_z) for c in LANDMARK_COLOR]
                             else:
-                                blended_color = [int(c * (1 + normalized_z)) for c in LANDMARK_COLOR]
+                                blended_color = [int(c * (1 - normalized_z)) for c in LANDMARK_COLOR]
 
                             # Draw the circle with the blended color
 
@@ -91,8 +91,3 @@ class CameraWidget(QWidget):
                             cv.circle(frame, (x,y), int(13 * scaling_factor), blended_color, -1)
                             # cv.putText(frame, str(idx), (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, outline_color, 2)  # Display landmark number
             self.update_image(frame)                
-
-    def notify_camera_stopped(self, camera_id):
-        if camera_id == self.camera_id:
-            pass
-            # print(f"Camera {camera_id} stopped.")

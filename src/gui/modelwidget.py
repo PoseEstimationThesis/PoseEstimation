@@ -2,14 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import mediapipe as mp
 import pandas as pd
-# import datetime
-# import matplotlib.dates as mdates
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import QTimer, Signal
-from logic.DataManager import shared_data_instance
+from logic.datamanager import shared_data_instance
 from mpl_toolkits.mplot3d import Axes3D
-from constants import VISIBILITY_THRESHOLD, CONNECTIONS, BODY_PARTS_NAME, BODY_PARTS_COLORS, LANDMARK_COLOR
+from constants import VISIBILITY_THRESHOLD, CONNECTIONS, BODY_PARTS_NAME, BODY_PARTS_COLORS, LANDMARK_COLOR, JOINTS_TO_DRAW
 
 class ModelWidget(QWidget):
     shown = Signal()
@@ -72,7 +70,8 @@ class ModelWidget(QWidget):
 
 
     def plot_landmarks(self, filtered_data, ax):
-        visible_landmarks = filtered_data[filtered_data['visibility'] > VISIBILITY_THRESHOLD]
+        visible_landmarks = filtered_data[(filtered_data['visibility'] > VISIBILITY_THRESHOLD) &
+                                      (filtered_data.index.get_level_values('Joint ID').isin(JOINTS_TO_DRAW))]
         xs = visible_landmarks['x'].tolist()
         zs = [-y for y in visible_landmarks['y'].tolist()]  # Swapped Z (previously Y)
         ys = visible_landmarks['z'].tolist()  # Swapped and inverted Y (previously Z)
@@ -80,21 +79,18 @@ class ModelWidget(QWidget):
         # Plot connections between landmarks
         for connection in CONNECTIONS:
             start_idx, end_idx = connection
-            start_joint = f'world_landmark_{start_idx}'
-            end_joint = f'world_landmark_{end_idx}'
 
-            if start_joint in visible_landmarks.index.get_level_values('Joint ID') and end_joint in visible_landmarks.index.get_level_values('Joint ID'):
-                start_landmark = visible_landmarks.loc[start_joint]
-                end_landmark = visible_landmarks.loc[end_joint]
+            if start_idx in visible_landmarks.index.get_level_values('Joint ID') and end_idx in visible_landmarks.index.get_level_values('Joint ID'):
+                start_landmark = visible_landmarks.loc[start_idx]
+                end_landmark = visible_landmarks.loc[end_idx]
 
-                if start_landmark['visibility'] > VISIBILITY_THRESHOLD and end_landmark['visibility'] > VISIBILITY_THRESHOLD:
-                    part_name = BODY_PARTS_NAME.get(end_idx, None)
-                    color = BODY_PARTS_COLORS.get(part_name)  # default to white if part name not found
-                    color_normalized = tuple(c/255 for c in color)  # Normalize color for Matplotlib
-                    ax.plot([start_landmark['x'], end_landmark['x']], 
-                            [start_landmark['z'], end_landmark['z']],  # Swapped and inverted Z (previously Y)
-                            [-start_landmark['y'], -end_landmark['y']],  # Swapped Y (previously Z)
-                            color=color_normalized, marker='o',linewidth = 0.05 * self.scale_level)
+                part_name = BODY_PARTS_NAME.get(end_idx, None)
+                color = BODY_PARTS_COLORS.get(part_name)
+                color_normalized = tuple(c/255 for c in color)  # Normalize color for Matplotlib
+                ax.plot([start_landmark['x'], end_landmark['x']], 
+                        [start_landmark['z'], end_landmark['z']],  # Swapped and inverted Z (previously Y)
+                        [-start_landmark['y'], -end_landmark['y']],  # Swapped Y (previously Z)
+                        color=color_normalized, marker='o',linewidth = 0.05 * self.scale_level)
 
         ax.scatter(xs, ys, zs, color=self.landmark_color_normalized, marker='o', s = 0.5 * self.scale_level)
 
