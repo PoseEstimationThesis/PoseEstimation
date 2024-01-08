@@ -4,6 +4,10 @@
 
 This repository contains the proof of concept of a system designed for the analysis of human skeletal models in 3D space using pose estimation tools based on neural networks. The primary objective of this project is to explore and demonstrate the application of modern pose estimation technologies in the fields of medical diagnosis, rehabilitation, and physical activity enhancement.
 
+
+https://github.com/PoseEstimationThesis/PoseEstimation/assets/32579616/39d06a18-082e-4fe5-9f10-1910a354983d
+
+
 ## Background
 
 The project forms a part of a bachelor's thesis, focusing on the utilization of advanced pose estimation tools, such as [MediaPipe](https://developers.google.com/mediapipe). These tools are leveraged to develop practical solutions that can significantly contribute to the healthcare sector, particularly in rehabilitation and medical diagnostics.
